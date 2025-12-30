@@ -31,9 +31,11 @@
       }
 
       body {
-        font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-        background: radial-gradient(1200px 600px at 20% 10%, rgba(124, 58, 237, 0.25), transparent 60%), radial-gradient(900px 500px at 90% 0%, rgba(34, 197, 94, 0.18), transparent 55%),
-          radial-gradient(1100px 700px at 50% 110%, rgba(59, 130, 246, 0.12), transparent 60%), var(--bg);
+        font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: radial-gradient(1200px 600px at 20% 10%, rgba(124, 58, 237, 0.25), transparent 60%),
+          radial-gradient(900px 500px at 90% 0%, rgba(34, 197, 94, 0.18), transparent 55%),
+          radial-gradient(1100px 700px at 50% 110%, rgba(59, 130, 246, 0.12), transparent 60%),
+          var(--bg);
         color: var(--text);
         line-height: 1.55;
         min-height: 100vh;
@@ -397,7 +399,8 @@
 
       <div id="builder" class="card builder" style="margin-top: 12px; display: none">
         <div class="hint">
-          Tempel HTML (misalnya tag <code>&lt;a&gt;</code>, <code>&lt;img&gt;</code>, <code>&lt;video&gt;</code>, <code>&lt;iframe&gt;</code>). Nanti akan dibuat link dengan format <code>#h=...</code> yang lebih pendek daripada HTML mentah.
+          Tempel HTML (misalnya tag <code>&lt;a&gt;</code>, <code>&lt;img&gt;</code>, <code>&lt;video&gt;</code>, <code>&lt;iframe&gt;</code>).
+          Nanti akan dibuat link dengan format <code>#h=...</code> yang lebih pendek daripada HTML mentah.
         </div>
 
         <textarea id="input-html" placeholder="Contoh: <a href='https://example.com' target='_blank'>Link</a>"></textarea>
@@ -410,8 +413,14 @@
         <div class="field" id="generated-field">
           <input id="generated-link" readonly placeholder="Link hasil generate akan muncul di sini" />
           <div class="row">
-            <button id="btn-copy" class="btn good">Copy</button>
+            <button id="btn-copy" class="btn good">Copy link</button>
           </div>
+
+          <input id="generated-encoded" readonly placeholder="Encoded (nilai h) akan muncul di sini" />
+          <div class="row">
+            <button id="btn-copy-encoded" class="btn good">Copy encoded</button>
+          </div>
+
           <div class="hint">Setelah generate, halaman akan otomatis pindah ke mode viewer karena hash berubah.</div>
         </div>
       </div>
@@ -440,96 +449,121 @@
     </div>
 
     <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        const builder = document.getElementById('builder');
-        const viewer = document.getElementById('viewer');
-        const hashError = document.getElementById('hash-error');
+      document.addEventListener("DOMContentLoaded", () => {
+        const builder = document.getElementById("builder");
+        const viewer = document.getElementById("viewer");
+        const hashError = document.getElementById("hash-error");
 
-        const inputHtml = document.getElementById('input-html');
-        const generatedLink = document.getElementById('generated-link');
+        const inputHtml = document.getElementById("input-html");
+        const generatedLink = document.getElementById("generated-link");
+        const generatedEncoded = document.getElementById("generated-encoded");
 
-        const nav = document.getElementById('section-navigation');
-        const navReset = document.getElementById('nav-reset');
+        const nav = document.getElementById("section-navigation");
+        const navReset = document.getElementById("nav-reset");
 
-        const imagesGrid = document.getElementById('images-grid');
-        const videosGrid = document.getElementById('videos-grid');
-        const iframesGrid = document.getElementById('iframes-grid');
-        const linksContainer = document.getElementById('links-container');
+        const imagesGrid = document.getElementById("images-grid");
+        const videosGrid = document.getElementById("videos-grid");
+        const iframesGrid = document.getElementById("iframes-grid");
+        const linksContainer = document.getElementById("links-container");
 
         const sections = {
-          images: { grid: imagesGrid, container: document.getElementById('images-section'), navButton: document.getElementById('nav-images'), label: 'Gambar', count: 0 },
-          videos: { grid: videosGrid, container: document.getElementById('videos-section'), navButton: document.getElementById('nav-videos'), label: 'Video', count: 0 },
-          iframes: { grid: iframesGrid, container: document.getElementById('iframes-section'), navButton: document.getElementById('nav-iframes'), label: 'Iframe', count: 0 },
-          links: { grid: linksContainer, container: document.getElementById('links-section'), navButton: document.getElementById('nav-links'), label: 'Link', count: 0 },
+          images: {
+            grid: imagesGrid,
+            container: document.getElementById("images-section"),
+            navButton: document.getElementById("nav-images"),
+            label: "Gambar",
+            count: 0,
+          },
+          videos: {
+            grid: videosGrid,
+            container: document.getElementById("videos-section"),
+            navButton: document.getElementById("nav-videos"),
+            label: "Video",
+            count: 0,
+          },
+          iframes: {
+            grid: iframesGrid,
+            container: document.getElementById("iframes-section"),
+            navButton: document.getElementById("nav-iframes"),
+            label: "Iframe",
+            count: 0,
+          },
+          links: {
+            grid: linksContainer,
+            container: document.getElementById("links-section"),
+            navButton: document.getElementById("nav-links"),
+            label: "Link",
+            count: 0,
+          },
         };
 
         function resetUI() {
-          hashError.style.display = 'none';
-          hashError.textContent = '';
+          hashError.style.display = "none";
+          hashError.textContent = "";
 
           Object.values(sections).forEach((s) => {
-            s.grid.innerHTML = '';
-            s.container.classList.add('hidden');
-            s.navButton.classList.add('hidden');
+            s.grid.innerHTML = "";
+            s.container.classList.add("hidden");
+            s.navButton.classList.add("hidden");
             s.count = 0;
             s.navButton.textContent = s.label;
           });
 
-          navReset.classList.add('hidden');
+          navReset.classList.add("hidden");
         }
 
         function setMode(mode) {
-          if (mode === 'builder') {
-            builder.style.display = 'grid';
-            viewer.style.display = 'none';
+          if (mode === "builder") {
+            builder.style.display = "grid";
+            viewer.style.display = "none";
           } else {
-            builder.style.display = 'none';
-            viewer.style.display = 'grid';
+            builder.style.display = "none";
+            viewer.style.display = "grid";
           }
         }
 
         function getHashParams() {
-          const raw = location.hash.startsWith('#') ? location.hash.slice(1) : location.hash;
+          const raw = location.hash.startsWith("#") ? location.hash.slice(1) : location.hash;
           return new URLSearchParams(raw);
         }
 
-        function getPackedFromHash(params) {
-          const packed = params.get('h');
-          return packed && packed.trim() ? packed.trim() : '';
+        function getPackedFromParams(params) {
+          const packed = params.get("h");
+          return packed && packed.trim() ? packed.trim() : "";
         }
 
-        function getGistRawUrlFromHash(params) {
-          const gr = params.get('gr');
+        function getGistRawUrlFromParams(params) {
+          const gr = params.get("gr");
           if (gr && gr.trim()) {
+            const v = gr.trim();
             try {
-              return decodeURIComponent(gr.trim());
+              return decodeURIComponent(v);
             } catch {
-              return gr.trim();
+              return v;
             }
           }
 
-          const user = (params.get('u') || '').trim();
-          const gistId = (params.get('g') || '').trim();
-          const filename = (params.get('f') || '').trim();
-
-          if (!user || !gistId || !filename) return '';
+          const user = (params.get("u") || "").trim();
+          const gistId = (params.get("g") || "").trim();
+          const filename = (params.get("f") || "").trim();
+          if (!user || !gistId || !filename) return "";
 
           return `https://gist.githubusercontent.com/${encodeURIComponent(user)}/${encodeURIComponent(gistId)}/raw/${encodeURIComponent(filename)}`;
         }
 
         function makeUrlWithPacked(packed) {
           const url = new URL(location.href);
-          url.hash = 'h=' + packed;
+          url.hash = "h=" + packed;
           return url.toString();
         }
 
         function packHtml(html) {
-          return LZString.compressToEncodedURIComponent(html || '');
+          return LZString.compressToEncodedURIComponent(html || "");
         }
 
         function unpackHtml(packed) {
-          const out = LZString.decompressFromEncodedURIComponent(packed || '');
-          return out || '';
+          const out = LZString.decompressFromEncodedURIComponent(packed || "");
+          return out || "";
         }
 
         function showSection(key) {
@@ -537,9 +571,9 @@
           if (!s) return;
 
           if (s.count > 0) {
-            s.container.classList.remove('hidden');
-            s.navButton.classList.remove('hidden');
-            s.navButton.textContent = s.label + ' (' + s.count + ')';
+            s.container.classList.remove("hidden");
+            s.navButton.classList.remove("hidden");
+            s.navButton.textContent = s.label + " (" + s.count + ")";
           }
         }
 
@@ -551,27 +585,27 @@
           }
         }
 
+        function stripSizeAndInlineStyle(el) {
+          el.removeAttribute("width");
+          el.removeAttribute("height");
+          if (el.getAttribute("style")) el.removeAttribute("style");
+        }
+
         function addImage(imgEl, hrefOverride) {
-          const mediaItem = document.createElement('div');
-          mediaItem.className = 'media-item';
+          const mediaItem = document.createElement("div");
+          mediaItem.className = "media-item";
 
           const img = imgEl.cloneNode(true);
+          stripSizeAndInlineStyle(img);
 
-          img.removeAttribute('width');
-          img.removeAttribute('height');
-          img.style.width = '';
-          img.style.height = '';
-          img.style.maxWidth = '';
-          img.style.maxHeight = '';
+          img.setAttribute("loading", "lazy");
+          img.setAttribute("decoding", "async");
 
-          img.setAttribute('loading', 'lazy');
-          img.setAttribute('decoding', 'async');
-
-          const a = document.createElement('a');
-          const targetHref = hrefOverride || img.getAttribute('data-url') || img.src || '';
+          const a = document.createElement("a");
+          const targetHref = hrefOverride || img.getAttribute("data-url") || img.src || "";
           a.href = normalizeUrl(targetHref);
-          a.target = '_blank';
-          a.rel = 'noopener noreferrer nofollow';
+          a.target = "_blank";
+          a.rel = "noopener noreferrer nofollow";
           a.appendChild(img);
 
           mediaItem.appendChild(a);
@@ -581,20 +615,14 @@
         }
 
         function addVideo(videoEl) {
-          const mediaItem = document.createElement('div');
-          mediaItem.className = 'media-item';
+          const mediaItem = document.createElement("div");
+          mediaItem.className = "media-item";
 
           const video = videoEl.cloneNode(true);
+          stripSizeAndInlineStyle(video);
 
-          video.removeAttribute('width');
-          video.removeAttribute('height');
-          video.style.width = '';
-          video.style.height = '';
-          video.style.maxWidth = '';
-          video.style.maxHeight = '';
-
-          video.setAttribute('controls', '');
-          video.setAttribute('preload', 'metadata');
+          video.setAttribute("controls", "");
+          video.setAttribute("preload", "metadata");
 
           mediaItem.appendChild(video);
 
@@ -603,22 +631,16 @@
         }
 
         function addIframe(iframeEl) {
-          const mediaItem = document.createElement('div');
-          mediaItem.className = 'media-item';
+          const mediaItem = document.createElement("div");
+          mediaItem.className = "media-item";
 
           const iframe = iframeEl.cloneNode(true);
+          stripSizeAndInlineStyle(iframe);
 
-          iframe.removeAttribute('width');
-          iframe.removeAttribute('height');
-          iframe.style.width = '';
-          iframe.style.height = '';
-          iframe.style.maxWidth = '';
-          iframe.style.maxHeight = '';
+          iframe.setAttribute("loading", "lazy");
 
-          iframe.setAttribute('loading', 'lazy');
-
-          if (!iframe.getAttribute('sandbox')) {
-            iframe.setAttribute('sandbox', 'allow-scripts allow-popups allow-forms allow-presentation');
+          if (!iframe.getAttribute("sandbox")) {
+            iframe.setAttribute("sandbox", "allow-scripts allow-popups allow-forms allow-presentation");
           }
 
           mediaItem.appendChild(iframe);
@@ -629,24 +651,24 @@
 
         function addLink(aEl) {
           const a = aEl.cloneNode(true);
-          a.target = '_blank';
-          a.rel = 'noopener noreferrer';
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
 
-          const text = (a.textContent || a.href || 'Link').trim();
-          a.textContent = text || 'Link';
-          a.className = 'link-pill';
+          const text = (a.textContent || a.href || "Link").trim();
+          a.textContent = text || "Link";
+          a.className = "link-pill";
 
           sections.links.grid.appendChild(a);
           sections.links.count += 1;
         }
 
         function processAnchor(aEl) {
-          const imgChild = aEl.querySelector('img');
-          const videoChild = aEl.querySelector('video');
-          const iframeChild = aEl.querySelector('iframe');
+          const imgChild = aEl.querySelector("img");
+          const videoChild = aEl.querySelector("video");
+          const iframeChild = aEl.querySelector("iframe");
 
           if (imgChild) {
-            addImage(imgChild, aEl.getAttribute('href') || '');
+            addImage(imgChild, aEl.getAttribute("href") || "");
             return;
           }
 
@@ -664,7 +686,7 @@
         }
 
         function* walkRenderable(root) {
-          const allowed = new Set(['A', 'IMG', 'VIDEO', 'IFRAME']);
+          const allowed = new Set(["A", "IMG", "VIDEO", "IFRAME"]);
           for (const child of Array.from(root.children)) {
             if (allowed.has(child.tagName)) {
               yield child;
@@ -678,35 +700,50 @@
           resetUI();
 
           const parser = new DOMParser();
-          const doc = parser.parseFromString(html || '', 'text/html');
+          const doc = parser.parseFromString(html || "", "text/html");
 
           for (const el of walkRenderable(doc.body)) {
             const tag = el.tagName.toLowerCase();
 
-            if (tag === 'img') addImage(el);
-            else if (tag === 'video') addVideo(el);
-            else if (tag === 'iframe') addIframe(el);
-            else if (tag === 'a') processAnchor(el);
+            if (tag === "img") addImage(el);
+            else if (tag === "video") addVideo(el);
+            else if (tag === "iframe") addIframe(el);
+            else if (tag === "a") processAnchor(el);
           }
 
-          showSection('images');
-          showSection('videos');
-          showSection('iframes');
-          showSection('links');
+          showSection("images");
+          showSection("videos");
+          showSection("iframes");
+          showSection("links");
 
           const any = sections.images.count + sections.videos.count + sections.iframes.count + sections.links.count > 0;
 
           if (!any) {
-            hashError.textContent = 'Konten tidak terbaca atau tidak ada elemen yang didukung.';
-            hashError.style.display = 'block';
+            hashError.textContent = "Konten tidak terbaca atau tidak ada elemen yang didukung.";
+            hashError.style.display = "block";
           }
 
-          navReset.classList.remove('hidden');
+          navReset.classList.remove("hidden");
+        }
+
+        async function copyText(value) {
+          if (!value) return;
+
+          try {
+            await navigator.clipboard.writeText(value);
+          } catch {
+            const tmp = document.createElement("textarea");
+            tmp.value = value;
+            document.body.appendChild(tmp);
+            tmp.select();
+            document.execCommand("copy");
+            tmp.remove();
+          }
         }
 
         async function fetchText(url) {
-          const res = await fetch(url, { cache: 'no-store' });
-          if (!res.ok) throw new Error('Gagal fetch gist');
+          const res = await fetch(url, { cache: "no-store" });
+          if (!res.ok) throw new Error("Gagal fetch gist");
           return await res.text();
         }
 
@@ -716,111 +753,103 @@
           const token = ++lastRunToken;
           const params = getHashParams();
 
-          const packed = getPackedFromHash(params);
-          const gistRawUrl = getGistRawUrlFromHash(params);
+          const packed = getPackedFromParams(params);
+          const gistRawUrl = getGistRawUrlFromParams(params);
 
           if (!packed && !gistRawUrl) {
             resetUI();
-            setMode('builder');
+            setMode("builder");
             return;
           }
 
-          setMode('viewer');
+          setMode("viewer");
           resetUI();
 
           try {
             let packedFromSource = packed;
 
             if (!packedFromSource && gistRawUrl) {
-              hashError.textContent = 'Memuat dari gist...';
-              hashError.style.display = 'block';
+              hashError.textContent = "Memuat dari gist...";
+              hashError.style.display = "block";
 
               const gistText = await fetchText(gistRawUrl);
-
               if (token !== lastRunToken) return;
 
-              packedFromSource = (gistText || '').trim();
-              if (!packedFromSource) throw new Error('Isi file gist kosong');
+              packedFromSource = (gistText || "").trim();
+              if (!packedFromSource) throw new Error("Isi file gist kosong");
             }
 
             const html = unpackHtml(packedFromSource);
-            if (!html) throw new Error('Data encode tidak valid atau gagal didekompres');
+            if (!html) throw new Error("Data encode tidak valid atau gagal didekompres");
 
-            hashError.style.display = 'none';
-            hashError.textContent = '';
+            hashError.style.display = "none";
+            hashError.textContent = "";
 
             renderHtmlToDOM(html);
           } catch (err) {
             resetUI();
-            hashError.textContent = err && err.message ? err.message : 'Terjadi error';
-            hashError.style.display = 'block';
-            navReset.classList.remove('hidden');
+            hashError.textContent = err && err.message ? err.message : "Terjadi error";
+            hashError.style.display = "block";
+            navReset.classList.remove("hidden");
           }
         }
 
-        nav.addEventListener('click', (e) => {
-          const chip = e.target.closest('.chip');
+        nav.addEventListener("click", (e) => {
+          const chip = e.target.closest(".chip");
           if (!chip) return;
 
-          if (chip.id === 'nav-reset') {
-            history.replaceState(null, '', location.pathname + location.search);
+          if (chip.id === "nav-reset") {
+            history.replaceState(null, "", location.pathname + location.search);
             runByHash();
             return;
           }
 
-          const targetId = chip.getAttribute('data-target');
+          const targetId = chip.getAttribute("data-target");
           if (!targetId) return;
 
           const el = document.getElementById(targetId);
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
+          if (el) el.scrollIntoView({ behavior: "smooth" });
         });
 
-        document.getElementById('btn-generate').addEventListener('click', () => {
-          const html = (inputHtml.value || '').trim();
+        document.getElementById("btn-generate").addEventListener("click", () => {
+          const html = (inputHtml.value || "").trim();
           if (!html) {
-            generatedLink.value = '';
+            generatedLink.value = "";
+            generatedEncoded.value = "";
             return;
           }
 
           const packed = packHtml(html);
-          const url = makeUrlWithPacked(packed);
-          generatedLink.value = url;
+          generatedEncoded.value = packed;
+          generatedLink.value = makeUrlWithPacked(packed);
 
-          location.hash = 'h=' + packed;
+          location.hash = "h=" + packed;
         });
 
-        document.getElementById('btn-clear').addEventListener('click', () => {
-          inputHtml.value = '';
-          generatedLink.value = '';
+        document.getElementById("btn-clear").addEventListener("click", () => {
+          inputHtml.value = "";
+          generatedLink.value = "";
+          generatedEncoded.value = "";
         });
 
-        document.getElementById('btn-copy').addEventListener('click', async () => {
-          const v = generatedLink.value || '';
-          if (!v) return;
-
-          try {
-            await navigator.clipboard.writeText(v);
-          } catch {
-            const tmp = document.createElement('textarea');
-            tmp.value = v;
-            document.body.appendChild(tmp);
-            tmp.select();
-            document.execCommand('copy');
-            tmp.remove();
-          }
+        document.getElementById("btn-copy").addEventListener("click", async () => {
+          await copyText(generatedLink.value || "");
         });
 
-        const goToTopButton = document.getElementById('go-to-top');
-        window.addEventListener('scroll', () => {
-          if (window.scrollY > 320) goToTopButton.classList.add('visible');
-          else goToTopButton.classList.remove('visible');
+        document.getElementById("btn-copy-encoded").addEventListener("click", async () => {
+          await copyText(generatedEncoded.value || "");
         });
-        goToTopButton.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+        const goToTopButton = document.getElementById("go-to-top");
+        window.addEventListener("scroll", () => {
+          if (window.scrollY > 320) goToTopButton.classList.add("visible");
+          else goToTopButton.classList.remove("visible");
+        });
+        goToTopButton.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 
         runByHash();
-        window.addEventListener('hashchange', runByHash);
+        window.addEventListener("hashchange", () => runByHash());
       });
     </script>
   </body>
 </html>
-
