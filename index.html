@@ -457,34 +457,10 @@
         const linksContainer = document.getElementById('links-container');
 
         const sections = {
-          images: {
-            grid: imagesGrid,
-            container: document.getElementById('images-section'),
-            navButton: document.getElementById('nav-images'),
-            label: 'Gambar',
-            count: 0,
-          },
-          videos: {
-            grid: videosGrid,
-            container: document.getElementById('videos-section'),
-            navButton: document.getElementById('nav-videos'),
-            label: 'Video',
-            count: 0,
-          },
-          iframes: {
-            grid: iframesGrid,
-            container: document.getElementById('iframes-section'),
-            navButton: document.getElementById('nav-iframes'),
-            label: 'Iframe',
-            count: 0,
-          },
-          links: {
-            grid: linksContainer,
-            container: document.getElementById('links-section'),
-            navButton: document.getElementById('nav-links'),
-            label: 'Link',
-            count: 0,
-          },
+          images: { grid: imagesGrid, container: document.getElementById('images-section'), navButton: document.getElementById('nav-images'), label: 'Gambar', count: 0 },
+          videos: { grid: videosGrid, container: document.getElementById('videos-section'), navButton: document.getElementById('nav-videos'), label: 'Video', count: 0 },
+          iframes: { grid: iframesGrid, container: document.getElementById('iframes-section'), navButton: document.getElementById('nav-iframes'), label: 'Iframe', count: 0 },
+          links: { grid: linksContainer, container: document.getElementById('links-section'), navButton: document.getElementById('nav-links'), label: 'Link', count: 0 },
         };
 
         function resetUI() {
@@ -512,11 +488,33 @@
           }
         }
 
-        function getPackedFromHash() {
+        function getHashParams() {
           const raw = location.hash.startsWith('#') ? location.hash.slice(1) : location.hash;
-          const params = new URLSearchParams(raw);
+          return new URLSearchParams(raw);
+        }
+
+        function getPackedFromHash(params) {
           const packed = params.get('h');
           return packed && packed.trim() ? packed.trim() : '';
+        }
+
+        function getGistRawUrlFromHash(params) {
+          const gr = params.get('gr');
+          if (gr && gr.trim()) {
+            try {
+              return decodeURIComponent(gr.trim());
+            } catch {
+              return gr.trim();
+            }
+          }
+
+          const user = (params.get('u') || '').trim();
+          const gistId = (params.get('g') || '').trim();
+          const filename = (params.get('f') || '').trim();
+
+          if (!user || !gistId || !filename) return '';
+
+          return `https://gist.githubusercontent.com/${encodeURIComponent(user)}/${encodeURIComponent(gistId)}/raw/${encodeURIComponent(filename)}`;
         }
 
         function makeUrlWithPacked(packed) {
@@ -558,6 +556,14 @@
           mediaItem.className = 'media-item';
 
           const img = imgEl.cloneNode(true);
+
+          img.removeAttribute('width');
+          img.removeAttribute('height');
+          img.style.width = '';
+          img.style.height = '';
+          img.style.maxWidth = '';
+          img.style.maxHeight = '';
+
           img.setAttribute('loading', 'lazy');
           img.setAttribute('decoding', 'async');
 
@@ -579,6 +585,14 @@
           mediaItem.className = 'media-item';
 
           const video = videoEl.cloneNode(true);
+
+          video.removeAttribute('width');
+          video.removeAttribute('height');
+          video.style.width = '';
+          video.style.height = '';
+          video.style.maxWidth = '';
+          video.style.maxHeight = '';
+
           video.setAttribute('controls', '');
           video.setAttribute('preload', 'metadata');
 
@@ -593,6 +607,14 @@
           mediaItem.className = 'media-item';
 
           const iframe = iframeEl.cloneNode(true);
+
+          iframe.removeAttribute('width');
+          iframe.removeAttribute('height');
+          iframe.style.width = '';
+          iframe.style.height = '';
+          iframe.style.maxWidth = '';
+          iframe.style.maxHeight = '';
+
           iframe.setAttribute('loading', 'lazy');
 
           if (!iframe.getAttribute('sandbox')) {
@@ -682,27 +704,58 @@
           navReset.classList.remove('hidden');
         }
 
-        function runByHash() {
-          const packed = getPackedFromHash();
+        async function fetchText(url) {
+          const res = await fetch(url, { cache: 'no-store' });
+          if (!res.ok) throw new Error('Gagal fetch gist');
+          return await res.text();
+        }
 
-          if (!packed) {
+        let lastRunToken = 0;
+
+        async function runByHash() {
+          const token = ++lastRunToken;
+          const params = getHashParams();
+
+          const packed = getPackedFromHash(params);
+          const gistRawUrl = getGistRawUrlFromHash(params);
+
+          if (!packed && !gistRawUrl) {
             resetUI();
             setMode('builder');
             return;
           }
 
           setMode('viewer');
+          resetUI();
 
-          const html = unpackHtml(packed);
-          if (!html) {
+          try {
+            let packedFromSource = packed;
+
+            if (!packedFromSource && gistRawUrl) {
+              hashError.textContent = 'Memuat dari gist...';
+              hashError.style.display = 'block';
+
+              const gistText = await fetchText(gistRawUrl);
+
+              if (token !== lastRunToken) return;
+
+              packedFromSource = (gistText || '').trim();
+              if (!packedFromSource) throw new Error('Isi file gist kosong');
+            }
+
+            const html = unpackHtml(packedFromSource);
+            if (!html) throw new Error('Data encode tidak valid atau gagal didekompres');
+
+            hashError.style.display = 'none';
+            hashError.textContent = '';
+
+            renderHtmlToDOM(html);
+          } catch (err) {
             resetUI();
-            hashError.textContent = 'Hash #h tidak valid atau gagal didekompres.';
+            hashError.textContent = err && err.message ? err.message : 'Terjadi error';
             hashError.style.display = 'block';
             navReset.classList.remove('hidden');
-            return;
           }
-
-          renderHtmlToDOM(html);
         }
 
         nav.addEventListener('click', (e) => {
@@ -770,3 +823,4 @@
     </script>
   </body>
 </html>
+
