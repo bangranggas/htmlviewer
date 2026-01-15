@@ -282,7 +282,8 @@
         height: 100%;
         object-fit: contain;
         display: block;
-        transform-origin: 0 0; /* Penting untuk zoom terarah */
+        transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Smooth zoom */
+        will-change: transform;
       }
 
       .tiktok-slide {
@@ -700,30 +701,59 @@
           a.appendChild(mainImg);
           slide.appendChild(a);
 
-          // --- Zoom State Variables ---
-          let zoomState = {
-            scale: 1,
-            panning: false,
-            pointX: 0,
-            pointY: 0,
-            startX: 0,
-            startY: 0,
-            dist: 0,
-          };
+          // --- Double Click Zoom & Targeted Zoom Logic ---
+          let isZoomed = false;
+          let clickTimer = null;
 
-          const updateZoom = () => {
-            mainImg.style.transform = `translate(${zoomState.pointX}px, ${zoomState.pointY}px) scale(${zoomState.scale})`;
-          };
-
-          // Single Click Handler (No Double Click)
           a.addEventListener('click', (e) => {
+            // Logic for Grid View
             if (isGridView) {
               e.preventDefault();
               isGridView = false;
               updateViewMode();
               slide.scrollIntoView({ block: 'center' });
+              return;
             }
-            // In immersive mode, default behavior (open link) works
+
+            // Logic for Immersive Mode (Double Click Zoom)
+            e.preventDefault(); // Stop immediate navigation
+
+            if (clickTimer) {
+              // --- Double Click Detected ---
+              clearTimeout(clickTimer);
+              clickTimer = null;
+
+              if (isZoomed) {
+                // Action: Zoom Out (Reset)
+                mainImg.style.transform = 'scale(1)';
+                mainImg.style.zIndex = 'auto';
+                isZoomed = false;
+              } else {
+                // Action: Zoom In (Targeted)
+                const rect = mainImg.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                mainImg.style.transformOrigin = `${x}px ${y}px`;
+                mainImg.style.transform = 'scale(2)';
+                mainImg.style.zIndex = '50';
+                isZoomed = true;
+              }
+            } else {
+              // --- Single Click Detected (Start Timer) ---
+              clickTimer = setTimeout(() => {
+                clickTimer = null;
+                if (!isZoomed) {
+                  // Action: Open Link (if not zoomed)
+                  window.open(targetHref, '_blank');
+                } else {
+                  // Action: Reset Zoom (if zoomed) - Optional UX choice
+                  mainImg.style.transform = 'scale(1)';
+                  mainImg.style.zIndex = 'auto';
+                  isZoomed = false;
+                }
+              }, 250); // Delay for double tap detection
+            }
           });
 
           els.imgGrid.appendChild(slide);
