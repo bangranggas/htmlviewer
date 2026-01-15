@@ -2,8 +2,8 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>HTML Viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>HTML Viewer - Super Lite</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
@@ -11,15 +11,13 @@
     <style>
       :root {
         --bg: #0b1220;
+        --tiktok-bg: #000000;
         --surface: rgba(255, 255, 255, 0.06);
-        --surface-2: rgba(255, 255, 255, 0.08);
-        --text: rgba(255, 255, 255, 0.92);
+        --text: rgba(255, 255, 255, 0.95);
         --muted: rgba(255, 255, 255, 0.7);
         --border: rgba(255, 255, 255, 0.12);
         --accent: #7c3aed;
-        --accent-2: #22c55e;
         --danger: #ef4444;
-        --shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
         --radius: 14px;
       }
 
@@ -27,455 +25,539 @@
         box-sizing: border-box;
         margin: 0;
         padding: 0;
-        scroll-behavior: smooth;
+        -webkit-tap-highlight-color: transparent;
       }
 
       body {
         font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-        background: radial-gradient(1200px 600px at 20% 10%, rgba(124, 58, 237, 0.25), transparent 60%), radial-gradient(900px 500px at 90% 0%, rgba(34, 197, 94, 0.18), transparent 55%),
-          radial-gradient(1100px 700px at 50% 110%, rgba(59, 130, 246, 0.12), transparent 60%), var(--bg);
+        background: var(--bg);
         color: var(--text);
         line-height: 1.55;
         min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* --- TIKTOK MODE STYLES --- */
+      body.tiktok-active {
+        background: var(--tiktok-bg);
+        overflow: hidden;
       }
 
       .container {
         max-width: 1400px;
         margin: 0 auto;
         padding: 18px;
+        position: relative;
+        z-index: 2;
       }
 
-      .card {
-        background: linear-gradient(180deg, var(--surface), rgba(255, 255, 255, 0.03));
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
+      body.tiktok-active .container {
+        padding: 0;
+        pointer-events: none;
+      }
+      body.tiktok-active .container > * {
+        pointer-events: auto;
       }
 
-      .builder {
-        padding: 16px;
-        display: grid;
+      /* --- INDICATOR --- */
+      #image-counter {
+        position: fixed;
+        top: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 6px 16px;
+        border-radius: 99px;
+        color: white;
+        font-size: 0.9rem;
+        font-weight: 600;
+        z-index: 150;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+      body.tiktok-active #image-counter {
+        opacity: 1;
+      }
+
+      /* --- FLOATING NAV --- */
+      .floating-nav-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 200;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
         gap: 12px;
       }
 
-      .builder textarea {
-        width: 100%;
-        min-height: 180px;
-        resize: vertical;
-        padding: 12px 12px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        background: rgba(0, 0, 0, 0.25);
-        color: var(--text);
-        outline: none;
-      }
-
-      .builder textarea:focus {
-        border-color: rgba(124, 58, 237, 0.6);
-        box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.12);
-      }
-
-      .row {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        align-items: center;
-      }
-
-      .btn {
-        appearance: none;
-        border: 1px solid var(--border);
-        background: rgba(255, 255, 255, 0.06);
-        color: var(--text);
-        padding: 10px 12px;
-        border-radius: 12px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: transform 0.12s ease, background 0.2s ease, border-color 0.2s ease;
-      }
-
-      .btn:hover {
-        transform: translateY(-1px);
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.18);
-      }
-
-      .btn.primary {
-        background: linear-gradient(135deg, rgba(124, 58, 237, 0.95), rgba(124, 58, 237, 0.6));
-        border-color: rgba(124, 58, 237, 0.55);
-      }
-
-      .btn.primary:hover {
-        background: linear-gradient(135deg, rgba(124, 58, 237, 1), rgba(124, 58, 237, 0.7));
-      }
-
-      .btn.good {
-        background: linear-gradient(135deg, rgba(34, 197, 94, 0.95), rgba(34, 197, 94, 0.55));
-        border-color: rgba(34, 197, 94, 0.55);
-      }
-
-      .btn.danger {
-        background: rgba(239, 68, 68, 0.12);
-        border-color: rgba(239, 68, 68, 0.45);
-      }
-
-      .field {
-        width: 100%;
-        display: grid;
-        gap: 8px;
-      }
-
-      .field input {
-        width: 100%;
-        padding: 10px 12px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        background: rgba(0, 0, 0, 0.25);
-        color: var(--text);
-        outline: none;
-      }
-
-      .hint {
-        font-size: 0.92rem;
-        color: var(--muted);
-      }
-
-      .error {
-        border: 1px solid rgba(239, 68, 68, 0.45);
-        background: rgba(239, 68, 68, 0.12);
-        color: rgba(255, 255, 255, 0.92);
-        padding: 10px 12px;
-        border-radius: 12px;
-      }
-
-      .toolbar {
-        position: sticky;
-        top: 0;
-        z-index: 50;
-        padding: 10px 0;
-        backdrop-filter: blur(10px);
-        background: linear-gradient(180deg, rgba(11, 18, 32, 0.92), rgba(11, 18, 32, 0.65));
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      }
-
-      .nav {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        align-items: center;
-      }
-
-      .chip {
-        border: 1px solid var(--border);
-        background: rgba(255, 255, 255, 0.06);
-        color: var(--text);
-        padding: 9px 12px;
-        border-radius: 999px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: transform 0.12s ease, background 0.2s ease;
-        user-select: none;
-      }
-
-      .chip:hover {
-        transform: translateY(-1px);
-        background: rgba(255, 255, 255, 0.1);
-      }
-
-      .chip.hidden {
-        display: none;
-      }
-
-      .sections {
-        padding-top: 12px;
-        display: grid;
-        gap: 16px;
-      }
-
-      .section {
-        background: linear-gradient(180deg, var(--surface), rgba(255, 255, 255, 0.03));
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
-        padding: 14px;
-        scroll-margin-top: 90px;
-      }
-
-      .section.hidden {
-        display: none;
-      }
-
-      .sr-only {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border: 0;
-      }
-
-      .media-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        gap: 14px;
-        align-items: start;
-      }
-
-      .media-item {
-        width: 100%;
-        max-width: 100%;
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 14px;
-        overflow: hidden;
-        box-shadow: 0 10px 18px rgba(0, 0, 0, 0.22);
-        transition: transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-        display: block;
-      }
-
-      .media-item a {
-        display: block;
-        width: 100%;
-      }
-
-      .media-item:hover {
-        transform: translateY(-3px);
-        border-color: rgba(124, 58, 237, 0.35);
-        box-shadow: 0 14px 26px rgba(0, 0, 0, 0.3);
-      }
-
-      .media-item img,
-      .media-item iframe,
-      .media-item video {
-        width: 100% !important;
-        max-width: 100% !important;
-        height: auto !important;
-        display: block;
-        object-fit: contain;
-      }
-
-      .media-item iframe {
-        aspect-ratio: 16 / 9;
-      }
-
-      .media-item img,
-      .media-item video {
-        max-height: 85vh;
-      }
-
-      .links {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        justify-content: center;
-      }
-
-      .link-pill {
-        padding: 10px 12px;
-        border-radius: 999px;
-        background: rgba(124, 58, 237, 0.18);
-        border: 1px solid rgba(124, 58, 237, 0.35);
-        color: var(--text);
-        text-decoration: none;
-        font-weight: 700;
-        max-width: 100%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .link-pill:hover {
-        background: rgba(124, 58, 237, 0.24);
-      }
-
-      #go-to-top {
-        position: fixed;
-        bottom: 18px;
-        right: 18px;
-        background: linear-gradient(135deg, rgba(124, 58, 237, 0.95), rgba(124, 58, 237, 0.55));
+      .floating-btn {
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.15);
         color: white;
-        width: 50px;
-        height: 50px;
+        width: 44px;
+        height: 44px;
         border-radius: 50%;
         display: flex;
         justify-content: center;
         align-items: center;
         cursor: pointer;
-        border: 1px solid rgba(124, 58, 237, 0.45);
-        box-shadow: var(--shadow);
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
-        z-index: 100;
       }
 
-      #go-to-top:hover {
-        transform: translateY(-2px);
+      #quick-reset-btn {
+        background: rgba(239, 68, 68, 0.3);
+        border-color: rgba(239, 68, 68, 0.4);
+        color: #fca5a5;
+      }
+      #view-toggle-btn {
+        background: rgba(124, 58, 237, 0.3);
+        border-color: rgba(124, 58, 237, 0.4);
+        color: #a78bfa;
       }
 
-      #go-to-top.visible {
-        opacity: 1;
-        visibility: visible;
-      }
-
-      #go-to-top svg {
-        width: 24px;
-        height: 24px;
-        fill: white;
-      }
-
-      @media (max-width: 768px) {
-        .container {
-          padding: 12px;
-        }
-
-        .nav {
-          overflow-x: auto;
-          overflow-y: hidden;
-          flex-wrap: nowrap;
-          -webkit-overflow-scrolling: touch;
-          padding-bottom: 6px;
-        }
-
-        .chip {
-          flex: 0 0 auto;
-          min-height: 44px;
-        }
-
-        .media-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .row {
-          flex-direction: column;
-          align-items: stretch;
-          width: 100%;
-        }
-
-        .row .btn {
-          width: 100%;
-          min-height: 44px;
-        }
-
-        .links {
-          flex-direction: column;
-          align-items: stretch;
-        }
-
-        .link-pill {
-          width: 100%;
-          text-align: center;
-        }
-      }
-
-      /* Tambahan Style untuk Tombol Iframe */
-      .media-actions {
-        padding: 10px 14px;
-        background: rgba(0, 0, 0, 0.3);
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        display: flex;
-        justify-content: flex-end;
-      }
-
-      .link-btn {
-        display: inline-flex;
-        align-items: center;
+      .nav-menu {
+        background: #121218;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 8px;
+        display: none;
+        flex-direction: column;
         gap: 6px;
-        font-size: 0.85rem;
-        font-weight: 500;
-        text-decoration: none;
-        color: var(--muted);
-        background: rgba(255, 255, 255, 0.05);
-        padding: 6px 12px;
+        min-width: 180px;
+        position: absolute;
+        top: 0;
+        right: 55px; /* Simple positioning */
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        pointer-events: auto;
+      }
+      .nav-menu.open {
+        display: flex;
+      }
+
+      .nav-item {
+        background: transparent;
+        border: none;
+        color: var(--text);
+        padding: 12px 16px;
+        text-align: left;
         border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        transition: all 0.2s ease;
+        font-weight: 500;
+        font-size: 0.95rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .nav-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .nav-item.hidden {
+        display: none;
       }
 
-      .link-btn:hover {
-        background: var(--accent);
-        color: white;
+      /* --- BUILDER --- */
+      .card {
+        background: #1e1e24;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+      }
+      .builder {
+        padding: 16px;
+        display: grid;
+        gap: 12px;
+        pointer-events: auto;
+        background: #111;
+        margin-top: 20px;
+      }
+      .builder textarea {
+        width: 100%;
+        min-height: 180px;
+        resize: vertical;
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: #222;
+        color: var(--text);
+        outline: none;
+      }
+      .builder textarea:focus {
         border-color: var(--accent);
-        transform: translateY(-1px);
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        padding: 10px 12px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+      .btn.good {
+        background: rgba(34, 197, 94, 0.2);
+        border-color: #22c55e;
+        color: #86efac;
+      }
+      .btn.danger {
+        background: rgba(239, 68, 68, 0.15);
+        border-color: var(--danger);
+        color: #fca5a5;
+      }
+      .field {
+        width: 100%;
+        display: grid;
+        gap: 8px;
+      }
+      .field input {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: #222;
+        color: var(--text);
+      }
+      .error {
+        border: 1px solid var(--danger);
+        background: rgba(239, 68, 68, 0.1);
+        color: white;
+        padding: 10px 12px;
+        border-radius: 12px;
+        margin-top: 12px;
+        pointer-events: auto;
       }
 
-      .link-btn svg {
-        width: 14px;
-        height: 14px;
+      /* --- TIKTOK MODE (SCROLL) --- */
+      #images-section.tiktok-mode {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 1;
+        background: black;
+        overflow-y: scroll;
+        scroll-snap-type: y mandatory;
+        padding: 0;
+        margin: 0;
+        border: none;
+        scrollbar-width: none;
+        overscroll-behavior: contain;
+      }
+      #images-section.tiktok-mode::-webkit-scrollbar {
+        display: none;
+      }
+
+      .tiktok-mode .tiktok-grid {
+        width: 100%;
+        display: block;
+      }
+
+      .tiktok-mode .tiktok-slide {
+        width: 100%;
+        height: 100vh;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+        background: black;
+      }
+
+      /* Main Image - Simplified */
+      .tiktok-slide .main-img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+      }
+
+      .tiktok-slide {
+        background: #080808;
+      }
+
+      /* --- GRID MODE --- */
+      #images-section.grid-mode {
+        position: relative;
+        z-index: 1;
+        background: var(--bg);
+        padding: 80px 10px 40px;
+        min-height: 100vh;
+        overflow-y: visible;
+      }
+      .grid-mode .tiktok-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2px;
+        width: 100%;
+      }
+      .grid-mode .tiktok-slide {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1 / 1;
+        display: block;
+        border-radius: 0;
+        overflow: hidden;
+        background: #111;
+        border: none;
+        cursor: pointer;
+      }
+      .grid-mode .main-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      /* --- OVERLAY PANELS --- */
+      .overlay-section {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+        max-height: 80vh;
+        background: #15151a;
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
+        z-index: 101;
+        padding: 20px;
+        padding-top: 60px;
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8);
+        overflow-y: auto;
+        transform: translateY(110%);
+        transition: transform 0.2s ease-out;
+        display: block !important;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        pointer-events: auto;
+      }
+      .overlay-section.open {
+        transform: translateY(0);
+      }
+      .overlay-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        padding: 15px 20px;
+        background: #1a1a1a;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        z-index: 10;
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
+      }
+      .overlay-title {
+        font-weight: 600;
+        font-size: 1rem;
+      }
+      .btn-close-overlay {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: white;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1.2rem;
+      }
+
+      .img-error-msg {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        color: #fca5a5;
+        background: #222;
+        padding: 10px;
+        border-radius: 8px;
+        text-align: center;
+        font-size: 0.8rem;
+        width: 100%;
+        height: 100%;
+        justify-content: center;
+      }
+
+      /* Media Items */
+      .iframe-replacement-card {
+        background: #1e1e24;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        text-decoration: none;
+        color: var(--text);
+        margin-bottom: 12px;
+      }
+      .iframe-icon {
+        color: var(--accent);
+      }
+      .iframe-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        overflow: hidden;
+      }
+      .iframe-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+      }
+      .iframe-url {
+        font-size: 0.8rem;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .media-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 14px;
+      }
+      .media-item {
+        background: black;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+      }
+      .media-item video {
+        width: 100%;
+        display: block;
+      }
+
+      .links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+      }
+      .link-pill {
+        padding: 8px 16px;
+        border-radius: 99px;
+        background: rgba(124, 58, 237, 0.15);
+        border: 1px solid rgba(124, 58, 237, 0.3);
+        color: var(--text);
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+
+      @media (min-width: 768px) {
+        .grid-mode .tiktok-grid {
+          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+          gap: 8px;
+          padding: 80px 20px 40px;
+        }
+        .grid-mode .tiktok-slide {
+          border-radius: 8px;
+        }
       }
     </style>
   </head>
 
   <body>
-    <button id="go-to-top" title="Kembali ke Atas" aria-label="Kembali ke Atas">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-        <path d="M12 2L2 12h5v8h10v-8h5z" />
-      </svg>
-    </button>
+    <!-- IMAGE COUNTER -->
+    <div id="image-counter">1 / 1</div>
 
-    <div class="toolbar">
-      <div class="container">
-        <div id="section-navigation" class="nav">
-          <button id="nav-images" class="chip hidden" data-target="images-section">Gambar</button>
-          <button id="nav-videos" class="chip hidden" data-target="videos-section">Video</button>
-          <button id="nav-iframes" class="chip hidden" data-target="iframes-section">Iframe</button>
-          <button id="nav-links" class="chip hidden" data-target="links-section">Link</button>
-          <button id="nav-reset" class="chip hidden" title="Kembali ke mode generator">Reset</button>
-        </div>
+    <!-- Floating Navigation Menu -->
+    <div class="floating-nav-container">
+      <!-- Toggle Grid/Scroll -->
+      <button id="view-toggle-btn" class="floating-btn" title="Ganti Tampilan" style="display: none">
+        <svg id="icon-grid" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        <svg id="icon-scroll" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+          <line x1="12" y1="18" x2="12.01" y2="18"></line>
+        </svg>
+      </button>
+
+      <!-- Reset -->
+      <button id="quick-reset-btn" class="floating-btn" title="Reset" style="display: none">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+      </button>
+
+      <!-- Burger Menu -->
+      <button id="menu-btn" class="floating-btn" aria-label="Menu" style="display: none">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+
+      <div id="nav-menu" class="nav-menu">
+        <button id="nav-images" class="nav-item hidden" data-target="images-section">Gambar</button>
+        <button id="nav-iframes" class="nav-item hidden" data-target="iframes-section">Link Video</button>
+        <button id="nav-videos" class="nav-item hidden" data-target="videos-section">Video</button>
+        <button id="nav-links" class="nav-item hidden" data-target="links-section">Link Lain</button>
       </div>
     </div>
 
     <div class="container">
-      <div id="hash-error" class="error" style="display: none; margin-top: 12px"></div>
+      <div id="hash-error" class="error" style="display: none"></div>
 
-      <div id="builder" class="card builder" style="margin-top: 12px; display: none">
-        <div class="hint">
-          Tempel HTML (misalnya tag <code>&lt;a&gt;</code>, <code>&lt;img&gt;</code>, <code>&lt;video&gt;</code>, <code>&lt;iframe&gt;</code>). Nanti akan dibuat link dengan format <code>#h=...</code> yang lebih pendek daripada HTML mentah.
-        </div>
-
-        <textarea id="input-html" placeholder="Contoh: <a href='https://example.com' target='_blank'>Link</a>"></textarea>
-
+      <div id="builder" class="card builder" style="display: none">
+        <div class="hint" style="color: #999; margin-bottom: 5px">Tempel kode HTML (img, iframe, a) di sini:</div>
+        <textarea id="input-html" placeholder="<img src='...'>"></textarea>
         <div class="row">
-          <button id="btn-generate" class="btn primary">Generate link</button>
+          <button id="btn-generate" class="btn primary">Generate</button>
           <button id="btn-clear" class="btn danger">Clear</button>
         </div>
-
-        <div class="field" id="generated-field">
-          <input id="generated-link" readonly placeholder="Link hasil generate akan muncul di sini" />
+        <div class="field" id="generated-field" style="margin-top: 10px">
+          <input id="generated-link" readonly placeholder="Result link..." />
           <div class="row">
-            <button id="btn-copy" class="btn good">Copy link</button>
+            <button id="btn-copy" class="btn good">Copy Link</button>
+            <button id="btn-copy-encoded" class="btn good">Copy Code</button>
           </div>
-
-          <input id="generated-encoded" readonly placeholder="Encoded (nilai h) akan muncul di sini" />
-          <div class="row">
-            <button id="btn-copy-encoded" class="btn good">Copy encoded</button>
-          </div>
-
-          <div class="hint">Setelah generate, halaman akan otomatis pindah ke mode viewer karena hash berubah.</div>
+          <input id="generated-encoded" readonly placeholder="Encoded code..." style="margin-top: 5px" />
         </div>
       </div>
 
       <div id="viewer" class="sections" style="display: none">
-        <div id="images-section" class="section hidden">
-          <h2 class="sr-only">Gambar</h2>
-          <div id="images-grid" class="media-grid"></div>
+        <div id="images-section" class="section hidden tiktok-mode">
+          <div id="images-grid" class="tiktok-grid"></div>
         </div>
 
-        <div id="videos-section" class="section hidden">
-          <h2 class="sr-only">Video</h2>
+        <div id="iframes-section" class="section hidden overlay-section">
+          <div class="overlay-header"><span class="overlay-title">Link Video</span><button class="btn-close-overlay">×</button></div>
+          <div id="iframes-grid" style="display: flex; flex-direction: column"></div>
+        </div>
+
+        <div id="videos-section" class="section hidden overlay-section">
+          <div class="overlay-header"><span class="overlay-title">Video</span><button class="btn-close-overlay">×</button></div>
           <div id="videos-grid" class="media-grid"></div>
         </div>
 
-        <div id="iframes-section" class="section hidden">
-          <h2 class="sr-only">Iframe</h2>
-          <div id="iframes-grid" class="media-grid"></div>
-        </div>
-
-        <div id="links-section" class="section hidden">
-          <h2 class="sr-only">Link</h2>
+        <div id="links-section" class="section hidden overlay-section">
+          <div class="overlay-header"><span class="overlay-title">Link Lainnya</span><button class="btn-close-overlay">×</button></div>
           <div id="links-container" class="links"></div>
         </div>
       </div>
@@ -483,88 +565,47 @@
 
     <script>
       document.addEventListener('DOMContentLoaded', () => {
-        const builder = document.getElementById('builder');
-        const viewer = document.getElementById('viewer');
-        const hashError = document.getElementById('hash-error');
-
-        const inputHtml = document.getElementById('input-html');
-        const generatedLink = document.getElementById('generated-link');
-        const generatedEncoded = document.getElementById('generated-encoded');
-
-        const nav = document.getElementById('section-navigation');
-        const navReset = document.getElementById('nav-reset');
-
-        const imagesGrid = document.getElementById('images-grid');
-        const videosGrid = document.getElementById('videos-grid');
-        const iframesGrid = document.getElementById('iframes-grid');
-        const linksContainer = document.getElementById('links-container');
-
-        const sections = {
-          images: {
-            grid: imagesGrid,
-            container: document.getElementById('images-section'),
-            navButton: document.getElementById('nav-images'),
-            label: 'Gambar',
-            count: 0,
-          },
-          videos: {
-            grid: videosGrid,
-            container: document.getElementById('videos-section'),
-            navButton: document.getElementById('nav-videos'),
-            label: 'Video',
-            count: 0,
-          },
-          iframes: {
-            grid: iframesGrid,
-            container: document.getElementById('iframes-section'),
-            navButton: document.getElementById('nav-iframes'),
-            label: 'Iframe',
-            count: 0,
-          },
-          links: {
-            grid: linksContainer,
-            container: document.getElementById('links-section'),
-            navButton: document.getElementById('nav-links'),
-            label: 'Link',
-            count: 0,
-          },
+        // Elements
+        const els = {
+          builder: document.getElementById('builder'),
+          viewer: document.getElementById('viewer'),
+          error: document.getElementById('hash-error'),
+          input: document.getElementById('input-html'),
+          genLink: document.getElementById('generated-link'),
+          genEnc: document.getElementById('generated-encoded'),
+          counter: document.getElementById('image-counter'),
+          menuBtn: document.getElementById('menu-btn'),
+          menu: document.getElementById('nav-menu'),
+          resetBtn: document.getElementById('quick-reset-btn'),
+          viewBtn: document.getElementById('view-toggle-btn'),
+          iconGrid: document.getElementById('icon-grid'),
+          iconScroll: document.getElementById('icon-scroll'),
+          imgSec: document.getElementById('images-section'),
+          imgGrid: document.getElementById('images-grid'),
         };
 
-        function resetUI() {
-          hashError.style.display = 'none';
-          hashError.textContent = '';
+        const sections = {
+          images: { c: els.imgSec, btn: document.getElementById('nav-images'), count: 0 },
+          iframes: { c: document.getElementById('iframes-section'), btn: document.getElementById('nav-iframes'), count: 0, grid: document.getElementById('iframes-grid') },
+          videos: { c: document.getElementById('videos-section'), btn: document.getElementById('nav-videos'), count: 0, grid: document.getElementById('videos-grid') },
+          links: { c: document.getElementById('links-section'), btn: document.getElementById('nav-links'), count: 0, grid: document.getElementById('links-container') },
+        };
 
-          Object.values(sections).forEach((s) => {
-            s.grid.innerHTML = '';
-            s.container.classList.add('hidden');
-            s.navButton.classList.add('hidden');
-            s.count = 0;
-            s.navButton.textContent = s.label;
-          });
+        // State
+        let isGridView = false;
 
-          navReset.classList.add('hidden');
+        // --- Core Utils (Restored) ---
+        function packHtml(html) {
+          return LZString.compressToEncodedURIComponent(html || '');
         }
-
-        function setMode(mode) {
-          if (mode === 'builder') {
-            builder.style.display = 'grid';
-            viewer.style.display = 'none';
-          } else {
-            builder.style.display = 'none';
-            viewer.style.display = 'grid';
-          }
+        function unpackHtml(packed) {
+          return LZString.decompressFromEncodedURIComponent(packed || '');
         }
-
-        function getHashParams() {
-          const raw = location.hash.startsWith('#') ? location.hash.slice(1) : location.hash;
-          return new URLSearchParams(raw);
+        function makeUrlWithPacked(packed) {
+          const url = new URL(location.href);
+          url.hash = 'h=' + packed;
+          return url.toString();
         }
-
-        function getPackedFromParams(params) {
-          const packed = params.get('h');
-          return packed && packed.trim() ? packed.trim() : '';
-        }
-
         function getGistRawUrlFromParams(params) {
           const gr = params.get('gr');
           if (gr && gr.trim()) {
@@ -575,226 +616,19 @@
               return v;
             }
           }
-
           const user = (params.get('u') || '').trim();
           const gistId = (params.get('g') || '').trim();
           const filename = (params.get('f') || '').trim();
           if (!user || !gistId || !filename) return '';
-
           return `https://gist.githubusercontent.com/${encodeURIComponent(user)}/${encodeURIComponent(gistId)}/raw/${encodeURIComponent(filename)}`;
         }
-
-        function makeUrlWithPacked(packed) {
-          const url = new URL(location.href);
-          url.hash = 'h=' + packed;
-          return url.toString();
+        async function fetchText(url) {
+          const res = await fetch(url, { cache: 'no-store' });
+          if (!res.ok) throw new Error('Gagal fetch gist');
+          return await res.text();
         }
-
-        function packHtml(html) {
-          return LZString.compressToEncodedURIComponent(html || '');
-        }
-
-        function unpackHtml(packed) {
-          const out = LZString.decompressFromEncodedURIComponent(packed || '');
-          return out || '';
-        }
-
-        function showSection(key) {
-          const s = sections[key];
-          if (!s) return;
-
-          if (s.count > 0) {
-            s.container.classList.remove('hidden');
-            s.navButton.classList.remove('hidden');
-            s.navButton.textContent = s.label + ' (' + s.count + ')';
-          }
-        }
-
-        function normalizeUrl(u) {
-          try {
-            return new URL(u, location.href).toString();
-          } catch {
-            return u;
-          }
-        }
-
-        function stripSizeAndInlineStyle(el) {
-          el.removeAttribute('width');
-          el.removeAttribute('height');
-          if (el.getAttribute('style')) el.removeAttribute('style');
-        }
-
-        function addImage(imgEl, hrefOverride) {
-          const mediaItem = document.createElement('div');
-          mediaItem.className = 'media-item';
-
-          const img = imgEl.cloneNode(true);
-          stripSizeAndInlineStyle(img);
-
-          img.setAttribute('loading', 'lazy');
-          img.setAttribute('decoding', 'async');
-
-          const a = document.createElement('a');
-          const targetHref = hrefOverride || img.getAttribute('data-url') || img.src || '';
-          a.href = normalizeUrl(targetHref);
-          a.target = '_blank';
-          a.rel = 'noopener noreferrer nofollow';
-          a.appendChild(img);
-
-          mediaItem.appendChild(a);
-
-          sections.images.grid.appendChild(mediaItem);
-          sections.images.count += 1;
-        }
-
-        function addVideo(videoEl) {
-          const mediaItem = document.createElement('div');
-          mediaItem.className = 'media-item';
-
-          const video = videoEl.cloneNode(true);
-          stripSizeAndInlineStyle(video);
-
-          video.setAttribute('controls', '');
-          video.setAttribute('preload', 'metadata');
-
-          mediaItem.appendChild(video);
-
-          sections.videos.grid.appendChild(mediaItem);
-          sections.videos.count += 1;
-        }
-
-        function addIframe(iframeEl) {
-          const mediaItem = document.createElement('div');
-          mediaItem.className = 'media-item';
-
-          const iframe = iframeEl.cloneNode(true);
-          stripSizeAndInlineStyle(iframe);
-
-          iframe.setAttribute('loading', 'lazy');
-
-          if (!iframe.getAttribute('sandbox')) {
-            iframe.setAttribute('sandbox', 'allow-scripts allow-popups allow-forms allow-presentation');
-          }
-
-          // Masukkan iframe ke container
-          mediaItem.appendChild(iframe);
-
-          // --- LOGIKA BARU DI SINI ---
-          // Ambil source url
-          const src = iframe.getAttribute('src');
-
-          if (src) {
-            // Buat container untuk tombol (footer kartu)
-            const actions = document.createElement('div');
-            actions.className = 'media-actions';
-
-            // Buat tombol link
-            const btn = document.createElement('a');
-            btn.href = normalizeUrl(src); // Gunakan fungsi normalizeUrl yang sudah ada
-            btn.target = '_blank';
-            btn.rel = 'noopener noreferrer nofollow';
-            btn.className = 'link-btn';
-            btn.title = 'Buka sumber video di tab baru';
-
-            // Isi tombol dengan Ikon dan Teks
-            btn.innerHTML = `
-              <span>Buka di Tab Baru</span>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-            `;
-
-            actions.appendChild(btn);
-            mediaItem.appendChild(actions);
-          }
-          // ---------------------------
-
-          sections.iframes.grid.appendChild(mediaItem);
-          sections.iframes.count += 1;
-        }
-
-        function addLink(aEl) {
-          const a = aEl.cloneNode(true);
-          a.target = '_blank';
-          a.rel = 'noopener noreferrer';
-
-          const text = (a.textContent || a.href || 'Link').trim();
-          a.textContent = text || 'Link';
-          a.className = 'link-pill';
-
-          sections.links.grid.appendChild(a);
-          sections.links.count += 1;
-        }
-
-        function processAnchor(aEl) {
-          const imgChild = aEl.querySelector('img');
-          const videoChild = aEl.querySelector('video');
-          const iframeChild = aEl.querySelector('iframe');
-
-          if (imgChild) {
-            addImage(imgChild, aEl.getAttribute('href') || '');
-            return;
-          }
-
-          if (videoChild) {
-            addVideo(videoChild);
-            return;
-          }
-
-          if (iframeChild) {
-            addIframe(iframeChild);
-            return;
-          }
-
-          addLink(aEl);
-        }
-
-        function* walkRenderable(root) {
-          const allowed = new Set(['A', 'IMG', 'VIDEO', 'IFRAME']);
-          for (const child of Array.from(root.children)) {
-            if (allowed.has(child.tagName)) {
-              yield child;
-              continue;
-            }
-            yield* walkRenderable(child);
-          }
-        }
-
-        function renderHtmlToDOM(html) {
-          resetUI();
-
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html || '', 'text/html');
-
-          for (const el of walkRenderable(doc.body)) {
-            const tag = el.tagName.toLowerCase();
-
-            if (tag === 'img') addImage(el);
-            else if (tag === 'video') addVideo(el);
-            else if (tag === 'iframe') addIframe(el);
-            else if (tag === 'a') processAnchor(el);
-          }
-
-          showSection('images');
-          showSection('videos');
-          showSection('iframes');
-          showSection('links');
-
-          const any = sections.images.count + sections.videos.count + sections.iframes.count + sections.links.count > 0;
-
-          if (!any) {
-            hashError.textContent = 'Konten tidak terbaca atau tidak ada elemen yang didukung.';
-            hashError.style.display = 'block';
-          }
-
-          navReset.classList.remove('hidden');
-        }
-
         async function copyText(value) {
           if (!value) return;
-
           try {
             await navigator.clipboard.writeText(value);
           } catch {
@@ -807,114 +641,305 @@
           }
         }
 
-        async function fetchText(url) {
-          const res = await fetch(url, { cache: 'no-store' });
-          if (!res.ok) throw new Error('Gagal fetch gist');
-          return await res.text();
+        // --- View Toggling ---
+        els.viewBtn.addEventListener('click', () => {
+          isGridView = !isGridView;
+          updateViewMode();
+        });
+
+        function updateViewMode() {
+          if (isGridView) {
+            els.imgSec.classList.remove('tiktok-mode');
+            els.imgSec.classList.add('grid-mode');
+            document.body.classList.remove('tiktok-active');
+            els.iconGrid.style.display = 'none';
+            els.iconScroll.style.display = 'block';
+            els.viewBtn.title = 'Scroll View';
+            els.counter.style.opacity = '0';
+          } else {
+            els.imgSec.classList.remove('grid-mode');
+            els.imgSec.classList.add('tiktok-mode');
+            document.body.classList.add('tiktok-active');
+            els.iconGrid.style.display = 'block';
+            els.iconScroll.style.display = 'none';
+            els.viewBtn.title = 'Grid View';
+            els.counter.style.opacity = '1';
+          }
         }
 
-        let lastRunToken = 0;
+        // --- Render Logic ---
+        function addImage(imgEl, hrefOverride) {
+          const slide = document.createElement('div');
+          slide.className = 'tiktok-slide';
 
+          const rawSrc = imgEl.getAttribute('data-url') || imgEl.src;
+          const targetHref = normalizeUrl(hrefOverride || rawSrc || '');
+
+          const mainImg = imgEl.cloneNode(true);
+          stripSize(mainImg);
+          mainImg.className = 'main-img';
+          mainImg.setAttribute('loading', 'lazy');
+
+          mainImg.onerror = function () {
+            this.style.display = 'none';
+            const err = document.createElement('div');
+            err.className = 'img-error-msg';
+            err.textContent = 'Gagal load';
+            slide.appendChild(err);
+          };
+
+          const a = document.createElement('a');
+          a.href = targetHref;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.style.display = 'contents';
+          a.appendChild(mainImg);
+          slide.appendChild(a);
+
+          let taps = 0;
+          let timer = null;
+
+          a.addEventListener('click', (e) => {
+            if (isGridView) {
+              e.preventDefault();
+              isGridView = false;
+              updateViewMode();
+              slide.scrollIntoView({ block: 'center' });
+              return;
+            }
+
+            e.preventDefault();
+            taps++;
+            if (taps === 1) {
+              timer = setTimeout(() => {
+                if (mainImg.style.transform !== 'scale(2)') window.open(targetHref, '_blank');
+                taps = 0;
+              }, 300);
+            } else {
+              clearTimeout(timer);
+              taps = 0;
+              if (mainImg.style.transform === 'scale(2)') {
+                mainImg.style.transform = 'scale(1)';
+                mainImg.style.zIndex = 'auto';
+              } else {
+                mainImg.style.transform = 'scale(2)';
+                mainImg.style.zIndex = '50';
+              }
+            }
+          });
+
+          els.imgGrid.appendChild(slide);
+          sections.images.count++;
+        }
+
+        function addIframe(el) {
+          let src = el.src;
+          if (src.includes('saint2.cr')) src = src.replace('saint2.cr', 'turbovid.cr');
+          const div = document.createElement('a');
+          div.className = 'iframe-replacement-card';
+          div.href = normalizeUrl(src);
+          div.target = '_blank';
+          div.innerHTML = `<span class="iframe-icon">▶</span><div class="iframe-info"><div class="iframe-title">Play Video</div><div class="iframe-url">${src}</div></div>`;
+          sections.iframes.grid.appendChild(div);
+          sections.iframes.count++;
+        }
+
+        function addVideo(el) {
+          const div = document.createElement('div');
+          div.className = 'media-item';
+          const vid = el.cloneNode(true);
+          stripSize(vid);
+          vid.controls = true;
+          div.appendChild(vid);
+          sections.videos.grid.appendChild(div);
+          sections.videos.count++;
+        }
+
+        function addLink(el) {
+          const a = el.cloneNode(true);
+          a.className = 'link-pill';
+          a.target = '_blank';
+          a.textContent = (a.textContent || a.href).substring(0, 30);
+          sections.links.grid.appendChild(a);
+          sections.links.count++;
+        }
+
+        function processAnchor(a) {
+          if (a.querySelector('img')) return addImage(a.querySelector('img'), a.href);
+          if (a.querySelector('video')) return addVideo(a.querySelector('video'));
+          if (a.querySelector('iframe')) return addIframe(a.querySelector('iframe'));
+          addLink(a);
+        }
+
+        function renderHtml(html) {
+          resetUI();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+
+          walk(doc.body);
+
+          Object.values(sections).forEach((s) => {
+            if (s.count > 0) {
+              s.btn.classList.remove('hidden');
+              s.c.classList.remove('hidden');
+            }
+          });
+
+          if (sections.images.count > 0) {
+            document.body.classList.add('tiktok-active');
+            els.viewBtn.style.display = 'flex';
+            els.counter.textContent = `1 / ${sections.images.count}`;
+          } else {
+            els.viewBtn.style.display = 'none';
+          }
+        }
+
+        function walk(root) {
+          for (let child of Array.from(root.children)) {
+            const tag = child.tagName.toLowerCase();
+            if (tag === 'img') addImage(child);
+            else if (tag === 'video') addVideo(child);
+            else if (tag === 'iframe') addIframe(child);
+            else if (tag === 'a') processAnchor(child);
+            else walk(child);
+          }
+        }
+
+        function resetUI() {
+          els.error.style.display = 'none';
+          els.imgGrid.innerHTML = '';
+          sections.iframes.grid.innerHTML = '';
+          sections.videos.grid.innerHTML = '';
+          sections.links.grid.innerHTML = '';
+          Object.values(sections).forEach((s) => {
+            s.count = 0;
+            s.btn.classList.add('hidden');
+            s.c.classList.add('hidden');
+            if (s !== sections.images) s.c.classList.remove('open');
+          });
+          document.body.classList.remove('tiktok-active');
+          isGridView = false;
+          updateViewMode();
+        }
+
+        function stripSize(el) {
+          el.removeAttribute('width');
+          el.removeAttribute('height');
+          el.removeAttribute('style');
+        }
+        function normalizeUrl(u) {
+          try {
+            return new URL(u, location.href).toString();
+          } catch {
+            return u;
+          }
+        }
+
+        els.imgSec.addEventListener('scroll', () => {
+          if (isGridView || !sections.images.count) return;
+          const idx = Math.round(els.imgSec.scrollTop / window.innerHeight) + 1;
+          els.counter.textContent = `${Math.min(Math.max(idx, 1), sections.images.count)} / ${sections.images.count}`;
+        });
+
+        els.menuBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          els.menu.classList.toggle('open');
+        });
+        document.addEventListener('click', (e) => {
+          if (!els.menu.contains(e.target) && !els.menuBtn.contains(e.target)) els.menu.classList.remove('open');
+        });
+
+        els.menu.addEventListener('click', (e) => {
+          const btn = e.target.closest('button');
+          if (!btn) return;
+          const target = btn.getAttribute('data-target');
+          if (!target) return;
+          els.menu.classList.remove('open');
+          if (target === 'images-section') {
+            document.querySelectorAll('.overlay-section').forEach((el) => el.classList.remove('open'));
+          } else {
+            document.querySelectorAll('.overlay-section').forEach((el) => el.classList.remove('open'));
+            document.getElementById(target).classList.add('open');
+          }
+        });
+
+        document.addEventListener('click', (e) => {
+          if (e.target.closest('.btn-close-overlay')) e.target.closest('.overlay-section').classList.remove('open');
+        });
+        els.resetBtn.addEventListener('click', () => {
+          history.replaceState(null, '', location.pathname);
+          runByHash();
+        });
+
+        let lastRunToken = 0;
         async function runByHash() {
           const token = ++lastRunToken;
-          const params = getHashParams();
-
-          const packed = getPackedFromParams(params);
+          const params = new URLSearchParams(location.hash.slice(1));
+          const packed = params.get('h');
           const gistRawUrl = getGistRawUrlFromParams(params);
 
           if (!packed && !gistRawUrl) {
-            resetUI();
-            setMode('builder');
+            els.builder.style.display = 'grid';
+            els.viewer.style.display = 'none';
+            els.menuBtn.style.display = 'none';
+            els.resetBtn.style.display = 'none';
+            els.viewBtn.style.display = 'none';
             return;
           }
 
-          setMode('viewer');
-          resetUI();
+          els.builder.style.display = 'none';
+          els.viewer.style.display = 'block';
+          els.menuBtn.style.display = 'flex';
+          els.resetBtn.style.display = 'flex';
 
           try {
-            let packedFromSource = packed;
-
-            if (!packedFromSource && gistRawUrl) {
-              hashError.textContent = 'Memuat dari gist...';
-              hashError.style.display = 'block';
-
-              const gistText = await fetchText(gistRawUrl);
+            let htmlContent = packed;
+            if (!htmlContent && gistRawUrl) {
+              els.error.textContent = 'Loading gist...';
+              els.error.style.display = 'block';
+              const text = await fetchText(gistRawUrl);
               if (token !== lastRunToken) return;
-
-              packedFromSource = (gistText || '').trim();
-              if (!packedFromSource) throw new Error('Isi file gist kosong');
+              htmlContent = (text || '').trim();
             }
 
-            const html = unpackHtml(packedFromSource);
-            if (!html) throw new Error('Data encode tidak valid atau gagal didekompres');
+            const html = unpackHtml(htmlContent);
+            if (!html) throw new Error('Data corrupt');
 
-            hashError.style.display = 'none';
-            hashError.textContent = '';
-
-            renderHtmlToDOM(html);
-          } catch (err) {
-            resetUI();
-            hashError.textContent = err && err.message ? err.message : 'Terjadi error';
-            hashError.style.display = 'block';
-            navReset.classList.remove('hidden');
+            els.error.style.display = 'none';
+            renderHtml(html);
+          } catch (e) {
+            els.error.textContent = e.message || 'Error loading content';
+            els.error.style.display = 'block';
+            els.builder.style.display = 'grid';
           }
         }
 
-        nav.addEventListener('click', (e) => {
-          const chip = e.target.closest('.chip');
-          if (!chip) return;
-
-          if (chip.id === 'nav-reset') {
-            history.replaceState(null, '', location.pathname + location.search);
-            runByHash();
-            return;
-          }
-
-          const targetId = chip.getAttribute('data-target');
-          if (!targetId) return;
-
-          const el = document.getElementById(targetId);
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
-        });
-
         document.getElementById('btn-generate').addEventListener('click', () => {
-          const html = (inputHtml.value || '').trim();
-          if (!html) {
-            generatedLink.value = '';
-            generatedEncoded.value = '';
-            return;
-          }
-
-          const packed = packHtml(html);
-          generatedEncoded.value = packed;
-          generatedLink.value = makeUrlWithPacked(packed);
-
-          location.hash = 'h=' + packed;
+          const v = els.input.value.trim();
+          if (!v) return;
+          const p = packHtml(v);
+          els.genEnc.value = p;
+          els.genLink.value = makeUrlWithPacked(p);
+          location.hash = 'h=' + p;
         });
 
         document.getElementById('btn-clear').addEventListener('click', () => {
-          inputHtml.value = '';
-          generatedLink.value = '';
-          generatedEncoded.value = '';
+          els.input.value = '';
+          els.genLink.value = '';
+          els.genEnc.value = '';
         });
 
-        document.getElementById('btn-copy').addEventListener('click', async () => {
-          await copyText(generatedLink.value || '');
+        document.getElementById('btn-copy').addEventListener('click', () => copyText(els.genLink.value));
+        document.getElementById('btn-copy-encoded').addEventListener('click', () => copyText(els.genEnc.value));
+
+        document.addEventListener('keydown', (e) => {
+          if (isGridView || els.imgSec.classList.contains('hidden')) return;
+          if (e.key === 'ArrowDown') els.imgSec.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+          if (e.key === 'ArrowUp') els.imgSec.scrollBy({ top: -window.innerHeight, behavior: 'smooth' });
         });
 
-        document.getElementById('btn-copy-encoded').addEventListener('click', async () => {
-          await copyText(generatedEncoded.value || '');
-        });
-
-        const goToTopButton = document.getElementById('go-to-top');
-        window.addEventListener('scroll', () => {
-          if (window.scrollY > 320) goToTopButton.classList.add('visible');
-          else goToTopButton.classList.remove('visible');
-        });
-        goToTopButton.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-
+        window.addEventListener('hashchange', runByHash);
         runByHash();
-        window.addEventListener('hashchange', () => runByHash());
       });
     </script>
   </body>
