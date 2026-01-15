@@ -282,6 +282,7 @@
         height: 100%;
         object-fit: contain;
         display: block;
+        transform-origin: 0 0; /* Penting untuk zoom terarah */
       }
 
       .tiktok-slide {
@@ -675,6 +676,13 @@
           const rawSrc = imgEl.getAttribute('data-url') || imgEl.src;
           const targetHref = normalizeUrl(hrefOverride || rawSrc || '');
 
+          // Create anchor first to ensure error message is clickable
+          const a = document.createElement('a');
+          a.href = targetHref;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.style.display = 'contents';
+
           const mainImg = imgEl.cloneNode(true);
           stripSize(mainImg);
           mainImg.className = 'main-img';
@@ -684,48 +692,38 @@
             this.style.display = 'none';
             const err = document.createElement('div');
             err.className = 'img-error-msg';
-            err.textContent = 'Gagal load';
-            slide.appendChild(err);
+            err.innerHTML =
+              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><div>Gagal load</div><div style="font-size:0.7em; opacity:0.7">(Klik untuk buka)</div>';
+            a.appendChild(err); // Append to 'a' so it remains clickable
           };
 
-          const a = document.createElement('a');
-          a.href = targetHref;
-          a.target = '_blank';
-          a.rel = 'noopener noreferrer';
-          a.style.display = 'contents';
           a.appendChild(mainImg);
           slide.appendChild(a);
 
-          let taps = 0;
-          let timer = null;
+          // --- Zoom State Variables ---
+          let zoomState = {
+            scale: 1,
+            panning: false,
+            pointX: 0,
+            pointY: 0,
+            startX: 0,
+            startY: 0,
+            dist: 0,
+          };
 
+          const updateZoom = () => {
+            mainImg.style.transform = `translate(${zoomState.pointX}px, ${zoomState.pointY}px) scale(${zoomState.scale})`;
+          };
+
+          // Single Click Handler (No Double Click)
           a.addEventListener('click', (e) => {
             if (isGridView) {
               e.preventDefault();
               isGridView = false;
               updateViewMode();
               slide.scrollIntoView({ block: 'center' });
-              return;
             }
-
-            e.preventDefault();
-            taps++;
-            if (taps === 1) {
-              timer = setTimeout(() => {
-                if (mainImg.style.transform !== 'scale(2)') window.open(targetHref, '_blank');
-                taps = 0;
-              }, 300);
-            } else {
-              clearTimeout(timer);
-              taps = 0;
-              if (mainImg.style.transform === 'scale(2)') {
-                mainImg.style.transform = 'scale(1)';
-                mainImg.style.zIndex = 'auto';
-              } else {
-                mainImg.style.transform = 'scale(2)';
-                mainImg.style.zIndex = '50';
-              }
-            }
+            // In immersive mode, default behavior (open link) works
           });
 
           els.imgGrid.appendChild(slide);
