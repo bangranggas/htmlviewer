@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
     <title>HTML Viewer - Super Lite</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet" />
@@ -786,11 +787,17 @@
           sections.images.count++;
         }
 
-        // --- MODIFIED: addIframe Function ---
+        // --- MODIFIED: addIframe Function (AUTO HTTPS FIX) ---
         function addIframe(el) {
           let src = el.src;
-          // Domain replacement logic (existing)
+          // Domain replacement logic
           if (src.includes('saint2.cr')) src = src.replace('saint2.cr', 'turbovid.cr');
+
+          // --- NEW: FORCE HTTPS ---
+          // Jika link iframe menggunakan http://, ganti paksa ke https://
+          if (src.startsWith('http://')) {
+            src = src.replace('http://', 'https://');
+          }
 
           // Create Responsive Wrapper
           const wrapper = document.createElement('div');
